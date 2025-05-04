@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>增强版AntConc文本分析工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .panel {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .file-list {
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        .file-item.active {
+            background-color: #e3f2fd;
+        }
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        .tab.active {
+            background-color: #fff;
+            border-bottom-color: transparent;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .concordance-line {
+            margin: 5px 0;
+        }
+        .keyword {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .kwic-display {
+            display: flex;
+            justify-content: center;
+        }
+        .kwic-left {
+            text-align: right;
+            width: 45%;
+        }
+        .kwic-center {
+            text-align: center;
+            padding: 0 5px;
+            font-weight: bold;
+            color: #e74c3c;
+            width: 10%;
+        }
+        .kwic-right {
+            text-align: left;
+            width: 45%;
+        }
+        #fileInfo {
+            margin-top: 10px;
+            font-style: italic;
+        }
+        .highlight {
+            background-color: yellow;
+        }
+        .options-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 8px 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        input, select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .collocates-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        #exportButton {
+            margin-top: 10px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        .not-found {
+            color: #e74c3c;
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        .plot-container {
+            width: 100%;
+            height: 150px;
+            margin: 20px 0;
+            position: relative;
+            background-color: white;
+            border: 1px solid #ddd;
+        }
+        .plot-bar {
+            position: absolute;
+            bottom: 0;
+            background-color: #3498db;
+            width: 2px;
+        }
+        .plot-marker {
+            position: absolute;
+            bottom: -20px;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: #666;
+        }
+        .plot-legend {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            font-size: 12px;
+            color: #666;
+        }
+        .checkbox-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .checkbox-item {
+            margin-bottom: 5px;
+        }
+        .switch-container {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            margin: 0 10px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .comparison-table {
+            margin-top: 20px;
+        }
+        .file-selector {
+            margin: 15px 0;
+        }
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            margin: 20px 0;
+        }
+        .tooltip {
+            position: absolute;
+            padding: 8px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 1000;
+            font-size: 12px;
+            display: none;
+        }
+        .file-size {
+            font-size: 12px;
+            color: #666;
+        }
+        .tab-content h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .tab-content p {
+            margin-bottom: 15px;
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #f1f1f1;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .progress {
+            height: 20px;
+            background-color: #3498db;
+            width: 0;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <h1>增强版AntConc文本分析工具</h1>
+    
+    <div class="container">
+        <div class="panel">
+            <div class="input-section">
+                <h2>语料库管理</h2>
+                <input type="file" id="fileInput" accept=".txt" multiple>
+                <div id="fileInfo">未选择文件</div>
+                <div class="switch-container">
+                    <span>原形还原(Lemmatization)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="lemmaToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span>启用</span>
+                </div>
+                <div class="file-list" id="fileList"></div>
+                <div class="progress-bar" style="display: none;">
+                    <div class="progress" id="progressBar"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <div class="tabs">
+                <div class="tab active" data-tab="concordance">关键词检索</div>
+                <div class="tab" data-tab="concordancePlot">检索频率图</div>
+                <div class="tab" data-tab="wordlist">词频列表</div>
+                <div class="tab" data-tab="collocates">词语搭配</div>
+                <div class="tab" data-tab="clusters">词语群组</div>
+                <div class="tab" data-tab="fileCompare">文件比较</div>
+                <div class="tab" data-tab="regexSearch">正则表达式搜索</div>
+            </div>
+            
+            <div class="tab-content active" id="concordance">
+                <h3>关键词检索</h3>
+                <p>在文本中查找指定关键词的上下文出现情况。</p>
+                <div class="options-section">
+                    <input type="text" id="searchInput" placeholder="输入要检索的关键词">
+                    <button id="searchButton">检索</button>
+                    <select id="sortSelect">
+                        <option value="none">不排序</option>
+                        <option value="left">以左侧文本排序</option>
+                        <option value="right">以右侧文本排序</option>
+                    </select>
+                    <input type="number" id="contextSize" min="1" max="20" value="5" placeholder="上下文大小">
+                    <div class="switch-container">
+                        <span>仅显示选中文件</span>
+                        <label class="switch">
+                            <input type="checkbox" id="selectedFilesOnly">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="loading" id="concordanceLoading">正在处理...</div>
+                <div class="not-found" id="concordanceNotFound">未找到匹配结果。</div>
+                <div id="concordanceResults"></div>
+            </div>
+            
+            <div class="tab-content" id="concordancePlot">
+                <h3>检索频率图</h3>
+                <p>可视化展示关键词在各个文件中的出现频率。</p>
+                <div class="options-section">
+                    <input type="text" id="plotSearchInput" placeholder="输入要检索的关键词">
+                    <button id="plotSearchButton">绘制频率图</button>
+                    <div class="switch-container">
+                        <span>仅显示选中文件</span>
+                        <label class="switch">
+                            <input type="checkbox" id="plotSelectedFilesOnly">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="loading" id="plotLoading">正在处理...</div>
+                <div class="not-found" id="plotNotFound">未找到匹配结果。</div>
+                <div id="plotResults"></div>
+            </div>
+            
+            <div class="tab-content" id="wordlist">
+                <h3>词频列表</h3>
+                <p>生成并显示文本中所有词语的频次统计。</p>
+                <div class="options-section">
+                    <button id="generateWordlistButton">生成词频列表</button>
+                    <select id="wordlistSortSelect">
+                        <option value="freq">按频率排序</option>
+                        <option value="alpha">按字母排序</option>
+                    </select>
+                    <input type="number" id="minFreq" min="1" value="1" placeholder="最小频率">
+                    <button id="exportWordlistButton">导出列表</button>
+                    <div class="switch-container">
+                        <span>仅分析选中文件</span>
+                        <label class="switch">
+                            <input type="checkbox" id="wordlistSelectedFilesOnly">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="loading" id="wordlistLoading">正在处理...</div>
+                <div id="wordlistResults"></div>
+            </div>
+            
+            <div class="tab-content" id="collocates">
+                <h3>词语搭配</h3>
+                <p>查找指定中心词在文本中的搭配词及其频次。</p>
+                <div class="options-section">
+                    <input type="text" id="collocatesInput" placeholder="输入中心词">
+                    <button id="findCollocatesButton">查找搭配词</button>
+                    <div class="collocates-filters">
+                        <input type="number" id="leftSpan" min="1" max="10" value="5" placeholder="左侧跨度">
+                        <input type="number" id="rightSpan" min="1" max="10" value="5" placeholder="右侧跨度">
+                    </div>
+                    <div class="switch-container">
+                        <span>仅分析选中文件</span>
+                        <label class="switch">
+                            <input type="checkbox" id="collocatesSelectedFilesOnly">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="loading" id="collocatesLoading">正在处理...</div>
+                <div class="not-found" id="collocatesNotFound">未找到匹配结果。</div>
+                <div id="collocatesResults"></div>
+            </div>
+            
+            <div class="tab-content" id="clusters">
+                <h3>词语群组</h3>
+                <p>查找文本中指定关键词出现的词组及其频次。</p>
+                <div class="options-section">
+                    <input type="text" id="clustersInput" placeholder="输入关键词">
+                    <button id="findClustersButton">查找词语群组</button>
+                    <input type="number" id="clusterSizeMin" min="2" max="8" value="2" placeholder="最小群组大小">
+                    <input type="number" id="clusterSizeMax" min="2" max="8" value="5" placeholder="最大群组大小">
+                    <input type="number" id="minClusterFreq" min="1" value="2" placeholder="最小频率">
+                    <div class="switch-container">
+                        <span>仅分析选中文件</span>
+                        <label class="switch">
+                            <input type="checkbox" id="clustersSelectedFilesOnly">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="loading" id="clustersLoading">正在处理...</div>
+                <div class="not-found" id="clustersNotFound">未找到匹配结果。</div>
+                <div id="clustersResults"></div>
+            </div>
+            
+            <div class="tab-content" id="fileCompare">
+                <h3>多文件词频比较</h3>
+                <p>比较多个文件之间的词频分布。</p>
+                <div class="options-section">
+                    <div class="file-selector" id="compareFilesSelector">
+                        <p>选择要比较的文件（至少选择两个文件）：</p>
+                        <div class="checkbox-list" id="compareFilesList"></div>
+                    </div>
+                    <button id="compareFilesButton" disabled>比较所选文件</button>
+                    <select id="compareMetric">
+                        <option value="rawFreq">原始频率</option>
+                        <option value="relFreq">相对频率（每千词）</option>
+                        <option value="logLikelihood">对数似然比(Log-likelihood)</option>
+                    </select>
+                    <input type="number" id="topNWords" min="10" max="100" value="50" placeholder="显示前N个词">
+                </div>
+                <div class="loading" id="compareLoading">正在处理...</div>
+                <div class="not-found" id="compareNotFound">无法比较，请确保选择了至少两个文件。</div>
+                <div id="compareResults"></div>
+                <div class="chart-container" id="compareChart"></div>
+            </div>
+            
+            <div class="tab-content" id="regexSearch">
+                <h3>正则表达式搜索</h3>
+                <p>使用正则表达式在文本中查找匹配模式。</p>
+                <div class="options-section">
+                    <input type="text" id="regexInput" placeholder="输入正则表达式">
+                    <button id="regexSearchButton">搜索</button>
+                    <div class="switch-container">
+                        <span>区分大小写</span>
+                        <label class="switch">
+                            <input type="checkbox" id="regexCaseSensitive">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="loading" id="regexLoading">正在处理...</div>
+                <div class="not-found" id="regexNotFound">未找到匹配结果。</div>
+                <div id="regexResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let corpus = [];
+        let tokenizedCorpus = [];
+        let wordFreqMap = new Map();
+        let fileNames = [];
+        let fileSizes = [];
+        let lemmaMap = {
+            'running': 'run',
+            'jumps': 'jump',
+            'eaten': 'eat',
+            'watched': 'watch',
+            'flying': 'fly',
+            'drove': 'drive',
+            'rode': 'ride',
+            'ate': 'eat',
+            'slept': 'sleep',
+            'thought': 'think',
+            'spoke': 'speak',
+            'took': 'take',
+            'made': 'make',
+            'came': 'come',
+            'saw': 'see',
+            'found': 'find',
+            'went': 'go',
+            'written': 'write',
+            'read': 'read',
+            'given': 'give',
+            'gone': 'go',
+            'done': 'do',
+            'taken': 'take',
+            'made': 'make',
+            'seen': 'see',
+            'come': 'come',
+            'want': 'want',
+            'get': 'get',
+            'given': 'give',
+            'tell': 'tell',
+            'say': 'say',
+            'put': 'put',
+            'look': 'look',
+            'keep': 'keep',
+            'feel': 'feel',
+            'ask': 'ask',
+            'seem': 'seem',
+            'call': 'call',
+            'listen': 'listen',
+            'hold': 'hold',
+            'lose': 'lose',
+            'pay': 'pay',
+            'meet': 'meet',
+            'find': 'find'
+        };
+        
+        // 加载文件
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files.length === 0) return;
+            
+            document.getElementById('fileInfo').innerText = `已选择 ${files.length} 个文件`;
+            
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            
+            fileNames = Array.from(files).map(file => file.name);
+            fileSizes = Array.from(files).map(file => file.size);
+            
+            const checkboxList = document.getElementById('compareFilesList');
+            checkboxList.innerHTML = '';
+            
+            let selectedFiles = Array.from(files).map((file, index) => {
+                const isChecked = index === 0;
+                const checkboxItem = document.createElement('div');
+                checkboxItem.className = 'checkbox-item';
+                checkboxItem.innerHTML = `
+                    <label>
+                        <input type="checkbox" value="${index}" ${isChecked ? 'checked' : ''}>
+                        ${file.name} (${(file.size / 1024).toFixed(1)} KB)
+                    </label>
+                `;
+                checkboxList.appendChild(checkboxItem);
+                return {
+                    name: file.name,
+                    content: '',
+                    selected: isChecked
+                };
+            });
+            
+            // 读取文件内容
+            let filesLoaded = 0;
+            Array.from(files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    selectedFiles[index].content = event.target.result;
+                    filesLoaded++;
+                    
+                    if (filesLoaded === files.length) {
+                        corpus = selectedFiles.map(fileData => fileData.content);
+                        
+                        // 分词
+                        tokenizedCorpus = corpus.map(text => {
+                            return text.toLowerCase()
+                                .replace(/\n/g, ' ')
+                                .replace(/[^\w\s]/g, ' ')
+                                .split(/\s+/)
+                                .filter(word => word.length > 0);
+                        });
+                        
+                        // 计算词频
+                        wordFreqMap = new Map();
+                        tokenizedCorpus.forEach(tokens => {
+                            tokens.forEach(word => {
+                                const lemmaWord = document.getElementById('lemmaToggle').checked 
+                                    ? lemmaMap[word] || word 
+                                    : word;
+                                wordFreqMap.set(lemmaWord, (wordFreqMap.get(lemmaWord) || 0) + 1);
+                            });
+                        });
+                        
+                        // 更新文件列表
+                        fileList.innerHTML = '';
+                        selectedFiles.forEach((fileData, index) => {
+                            const fileItem = document.createElement('div');
+                            fileItem.className = 'file-item';
+                            fileItem.setAttribute('data-index', index);
+                            fileItem.innerHTML = `
+                                <span>${fileData.name}</span>
+                                <span><span class="file-size">${(fileSizes[index] / 1024).toFixed(1)} KB</span> ${fileData.selected ? '✓' : ''}</span>
+                            `;
+                            fileList.appendChild(fileItem);
+                            
+                            // 添加点击事件
+                            fileItem.addEventListener('click', () => {
+                                fileItem.classList.toggle('active');
+                                fileData.selected = !fileData.selected;
+                                fileItem.children[1].textContent = `${(fileSizes[index] / 1024).toFixed(1)} KB ${fileData.selected ? '✓' : ''}`;
+                            });
+                        });
+                        
+                        // 更新比较按钮状态
+                        updateCompareButton();
+                        
+                        // 显示加载进度条
+                        const progressBar = document.getElementById('progressBar');
+                        progressBar.parentNode.style.display = 'block';
+                        progressBar.style.width = '100%';
+                        
+                        setTimeout(() => {
+                            progressBar.parentNode.style.display = 'none';
+                            progressBar.style.width = '0';
+                        }, 1000);
+                    }
+                };
+                reader.readAsText(file);
+            });
+        });
+        
+        // 切换标签页
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                const tabContent = document.getElementById(tab.dataset.tab);
+                const allTabContents = document.querySelectorAll('.tab-content');
+                
+                allTabContents.forEach(content => {
+                    content.classList.remove('active');
+                });
+                tabContent.classList.add('active');
+            });
+        });
+        
+        // 更新比较按钮状态
+        function updateCompareButton() {
+            const compareButton = document.getElementById('compareFilesButton');
+            const selectedFileCount = document.querySelectorAll('#compareFilesList input:checked').length;
+            compareButton.disabled = selectedFileCount < 2;
+        }
+        
+        // 比较所选文件
+        document.getElementById('compareFilesButton').addEventListener('click', () => {
+            const selectedFileIndices = Array.from(document.querySelectorAll('#compareFilesList input:checked'))
+                .map(checkbox => parseInt(checkbox.value));
+            
+            if (selectedFileIndices.length < 2) return;
+            
+            document.getElementById('compareLoading').style.display = 'block';
+            document.getElementById('compareNotFound').style.display = 'none';
+            document.getElementById('compareResults').innerHTML = '';
+            
+            setTimeout(() => {
+                document.getElementById('compareLoading').style.display = 'none';
+                
+                // 为所选文件创建词频列表
+                const fileWordlists = selectedFileIndices.map(index => {
+                    const text = corpus[index].toLowerCase()
+                        .replace(/\n/g, ' ')
+                        .replace(/[^\w\s]/g, ' ')
+                        .split(/\s+/)
+                        .filter(word => word.length > 0);
+                    
+                    const wordFreq = new Map();
+                    text.forEach(word => {
+                        const lemmaWord = document.getElementById('lemmaToggle').checked 
+                            ? lemmaMap[word] || word 
+                            : word;
+                        wordFreq.set(lemmaWord, (wordFreq.get(lemmaWord) || 0) + 1);
+                    });
+                    
+                    return {
+                        name: fileNames[index],
+                        wordFreq: wordFreq,
+                        totalTokens: text.length
+                    };
+                });
+                
+                // 获取所有唯一词
+                const allWords = new Set();
+                fileWordlists.forEach(fileData => {
+                    fileData.wordFreq.forEach((_, word) => {
+                        allWords.add(word);
+                    });
+                });
+                
+                // 创建比较表格
+                const table = document.createElement('table');
+                const thead = document.createElement('thead');
+                
+                // 表头
+                const headerRow = document.createElement('tr');
+                headerRow.innerHTML = `
+                    <th>排名</th>
+                    <th>词语</th>
+                    ${fileWordlists.map(file => `<th>${file.name}</th>`).join('')}
+                `;
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+                
+                // 表格内容
+                const tbody = document.createElement('tbody');
+                const results = Array.from(allWords)
+                    .sort((a, b) => {
+                        let aSum = 0, bSum = 0;
+                        fileWordlists.forEach(file => {
+                            aSum += file.wordFreq.get(a) || 0;
+                            bSum += file.wordFreq.get(b) || 0;
+                        });
+                        return bSum - aSum;
+                    })
+                    .slice(0, parseInt(document.getElementById('topNWords').value));
+                
+                results.forEach((word, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${word}</td>
+                        ${fileWordlists.map(file => {
+                            const freq = file.wordFreq.get(word) || 0;
+                            const metric = document.getElementById('compareMetric').value;
+                            
+                            if (metric === 'rawFreq') return `<td>${freq}</td>`;
+                            if (metric === 'relFreq') {
+                                const relFreq = ((freq / file.totalTokens) * 1000).toFixed(2);
+                                return `<td>${relFreq}</td>`;
+                            }
+                            if (metric === 'logLikelihood') {
+                                // 简化的对数似然比计算
+                                const totalTokenSum = fileWordlists.reduce((sum, f) => sum + f.totalTokens, 0);
+                                const expectedFreq = (wordFreqMap.get(word) || 0) * file.totalTokens / totalTokenSum;
+                                return `<td>${((freq - expectedFreq) ** 2 / expectedFreq).toFixed(2)}</td>`;
+                            }
+                            return `<td>${freq}</td>`;
+                        }).join('')}
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                table.appendChild(tbody);
+                document.getElementById('compareResults').appendChild(table);
+                
+                // 创建可视化图表
+                createComparisonChart(fileWordlists, results);
+            }, 100);
+        });
+        
+        // 创建比较图表
+        function createComparisonChart(fileWordlists, words) {
+            const chartContainer = document.getElementById('compareChart');
+            chartContainer.innerHTML = '';
+            
+            // 创建SVG元素
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '100%');
+            
+            const margin = { top: 20, right: 30, bottom: 50, left: 60 };
+            const width = parseInt(chartContainer.clientWidth) - margin.left - margin.right;
+            const height = parseInt(chartContainer.clientHeight) - margin.top - margin.bottom;
+            
+            // 创建图表组
+            const chart = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            chart.setAttribute('transform', `translate(${margin.left},${margin.top})`);
+            svg.appendChild(chart);
+            
+            // 计算最大频率
+            let maxFreq = 0;
+            fileWordlists.forEach(file => {
+                words.forEach(word => {
+                    const freq = file.wordFreq.get(word) || 0;
+                    if (freq > maxFreq) maxFreq = freq;
+                });
+            });
+            
+            // 创建Y轴尺度
+            const yScale = d3.scaleLinear()
+                .domain([0, maxFreq])
+                .range([height, 0]);
+            
+            // 创建Y轴
+            const yAxis = d3.axisLeft(yScale)
+                .ticks(5);
+            
+            const yAxisGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            yAxisGroup.setAttribute('class', 'y-axis');
+            d3.select(yAxisGroup).call(yAxis);
+            chart.appendChild(yAxisGroup);
+            
+            // 创建X轴尺度和轴
+            const xScale = d3.scaleBand()
+                .domain(words.map((_, i) => i))
+                .range([0, width])
+                .padding(0.1);
+            
+            const xAxis = d3.axisBottom(xScale)
+                .tickFormat(i => words[i]);
+            
+            const xAxisGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            xAxisGroup.setAttribute('class', 'x-axis');
+            xAxisGroup.setAttribute('transform', `translate(0,${height})`);
+            d3.select(xAxisGroup).call(xAxis);
+            chart.appendChild(xAxisGroup);
+            
+            // 为每个文件创建柱状图
+            const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6'];
+            const barWidth = xScale.bandwidth() / fileWordlists.length;
+            
+            fileWordlists.forEach((file, fileIndex) => {
+                words.forEach((word, wordIndex) => {
+                    const freq = file.wordFreq.get(word) || 0;
+                    
+                    // 创建柱形元素
+                    const bar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    bar.setAttribute('x', xScale(wordIndex) + (barWidth * fileIndex));
+                    bar.setAttribute('y', yScale(freq));
+                    bar.setAttribute('width', barWidth - 2);
+                    bar.setAttribute('height', height - yScale(freq));
+                    bar.setAttribute('fill', colors[fileIndex % colors.length]);
+                    
+                    // 添加悬停效果
+                    bar.addEventListener('mouseover', (e) => {
+                        bar.setAttribute('opacity', 0.7);
+                        
+                        // 显示提示框
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'tooltip';
+                        tooltip.style.left = `${e.clientX}px`;
+                        tooltip.style.top = `${e.clientY}px`;
+                        tooltip.textContent = `${word}: ${freq}`;
+                        document.body.appendChild(tooltip);
+                    });
+                    
+                    bar.addEventListener('mouseout', () => {
+                        bar.setAttribute('opacity', 1);
+                        document.body.querySelector('.tooltip').remove();
+                    });
+                    
+                    chart.appendChild(bar);
+                });
+            });
+            
+            // 添加图例
+            const legend = document.createElement('div');
+            legend.className = 'legend';
+            legend.style.position = 'absolute';
+            legend.style.right = '20px';
+            legend.style.top = '20px';
+            
+            fileWordlists.forEach((file, index) => {
+                const legendItem = document.createElement('div');
+                legendItem.style.display = 'flex';
+                legendItem.style.alignItems = 'center';
+                legendItem.style.marginBottom = '5px';
+                
+                const colorBox = document.createElement('div');
+                colorBox.style.width = '15px';
+                colorBox.style.height = '15px';
+                colorBox.style.backgroundColor = colors[index % colors.length];
+                colorBox.style.marginRight = '5px';
+                
+                const label = document.createElement('span');
+                label.textContent = file.name;
+                
+                legendItem.appendChild(colorBox);
+                legendItem.appendChild(label);
+                legend.appendChild(legendItem);
+            });
+            
+            chartContainer.appendChild(svg);
+            chartContainer.appendChild(legend);
+        }
+        
+        // 正则表达式搜索
+        document.getElementById('regexSearchButton').addEventListener('click', () => {
+            const regexPattern = document.getElementById('regexInput').value.trim();
+            if (!regexPattern) return;
+            
+            const caseSensitive = document.getElementById('regexCaseSensitive').checked;
+            
+            document.getElementById('regexLoading').style.display = 'block';
+            document.getElementById('regexResults').innerHTML = '';
+            
+            setTimeout(() => {
+                document.getElementById('regexLoading').style.display = 'none';
+                
+                try {
+                    const regex = new RegExp(regexPattern, caseSensitive ? '' : 'i');
+                    const matches = [];
+                    
+                    corpus.forEach((text, docIndex) => {
+                        let match;
+                        while ((match = regex.exec(text)) !== null) {
+                            matches.push({
+                                text: match[0],
+                                context: text.substring(
+                                    Math.max(0, match.index - 50),
+                                    Math.min(text.length, match.index + match[0].length + 50)
+                                ),
+                                document: fileNames[docIndex],
+                                position: match.index
+                            });
+                        }
+                    });
+                    
+                    if (matches.length === 0) {
+                        document.getElementById('regexNotFound').style.display = 'block';
+                        return;
+                    } else {
+                        document.getElementById('regexNotFound').style.display = 'none';
+                    }
+                    
+                    // 创建表格展示
+                    const table = document.createElement('table');
+                    const thead = document.createElement('thead');
+                    thead.innerHTML = `
+                        <tr>
+                            <th>匹配文本</th>
+                            <th>上下文</th>
+                            <th>所在文件</th>
+                            <th>位置</th>
+                        </tr>
+                    `;
+                    table.appendChild(thead);
+                    
+                    const tbody = document.createElement('tbody');
+                    matches.forEach(match => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${match.text}</td>
+                            <td>${match.context.replace(new RegExp(regexPattern, caseSensitive ? '' : 'i'), 
+                                (match) => `<span class="highlight">${match}</span>`)}</td>
+                            <td>${match.document}</td>
+                            <td>${match.position}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    table.appendChild(tbody);
+                    document.getElementById('regexResults').appendChild(table);
+                    
+                } catch (e) {
+                    alert(`正则表达式错误: ${e.message}`);
+                }
+            }, 100);
+        });
+        
+        // 关键词检索
+        document.getElementById('searchButton').addEventListener('click', () => {
+            const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+            if (!keyword || corpus.length === 0) return;
+            
+            const contextSize = parseInt(document.getElementById('contextSize').value) || 5;
+            const sortBy = document.getElementById('sortSelect').value;
+            const selectedFilesOnly = document.getElementById('selectedFilesOnly').checked;
+            
+            document.getElementById('concordanceLoading').style.display = 'block';
+            document.getElementById('concordanceResults').innerHTML = '';
+            document.getElementById('concordanceNotFound').style.display = 'none';
+            
+            setTimeout(() => {
+                document.getElementById('concordanceLoading').style.display = 'none';
+                
+                // 如果只有选中文件被分析，过滤语料库
+                let filteredCorpus = corpus;
+                if (selectedFilesOnly) {
+                    const selectedIndex = document.getElementById('fileList').querySelector('.file-item.active')?.getAttribute('data-index');
+                    if (selectedIndex !== undefined) {
+                        filteredCorpus = [corpus[selectedIndex]];
+                    } else {
+                        document.getElementById('concordanceNotFound').style.display = 'block';
+                        return;
+                    }
+                }
+                
+                const results = findConcordances(keyword, contextSize);
+                
+                if (results.length === 0) {
+                    document.getElementById('concordanceNotFound').style.display = 'block';
+                    return;
+                }
+                
+                // 排序结果
+                if (sortBy !== 'none') {
+                    results.sort((a, b) => {
+                        if (sortBy === 'left') {
+                            return a.left.localeCompare(b.left);
+                        } else {
+                            return a.right.localeCompare(b.right);
+                        }
+                    });
+                }
+                
+                // 显示KWIC (Key Word In Context)格式
+                const table = document.createElement('table');
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr>
+                        <th width="5%">序号</th>
+                        <th width="45%">左侧文本</th>
+                        <th width="10%">关键词</th>
+                        <th width="45%">右侧文本</th>
+                    </tr>
+                `;
+                table.appendChild(thead);
+                
+                const tbody = document.createElement('tbody');
+                results.forEach((result, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td class="kwic-left">${result.left}</td>
+                        <td class="kwic-center">${result.keyword}</td>
+                        <td class="kwic-right">${result.right}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                table.appendChild(tbody);
+                document.getElementById('concordanceResults').appendChild(table);
+            }, 100); // 短暂延迟以显示加载动画
+        });
+        
+        // 查找关键词上下文
+        function findConcordances(keyword, contextSize) {
+            const results = [];
+            
+            corpus.forEach((text, index) => {
+                const lowercaseText = text.toLowerCase();
+                let pos = lowercaseText.indexOf(keyword);
+                
+                while (pos !== -1) {
+                    // 确定关键词的实际大小写
+                    const actualKeyword = text.substring(pos, pos + keyword.length);
+                    
+                    // 计算左右上下文
+                    const start = Math.max(0, pos - (contextSize * 10));
+                    const end = Math.min(text.length, pos + keyword.length + (contextSize * 10));
+                    const context = text.substring(start, end);
+                    
+                    // 分割上下文
+                    const keywordIndex = pos - start;
+                    const left = context.substring(0, keywordIndex);
+                    const right = context.substring(keywordIndex + keyword.length);
+                    
+                    results.push({
+                        left: left,
+                        keyword: actualKeyword,
+                        right: right,
+                        position: pos,
+                        documentIndex: index
+                    });
+                    
+                    pos = lowercaseText.indexOf(keyword, pos + 1);
+                }
+            });
+            
+            return results;
+        }
+        
+        // 绘制检索频率图
+        document.getElementById('plotSearchButton').addEventListener('click', () => {
+            const keyword = document.getElementById('plotSearchInput').value.trim().toLowerCase();
+            if (!keyword || corpus.length === 0) return;
+            
+            const selectedFilesOnly = document.getElementById('plotSelectedFilesOnly').checked;
+            
+            document.getElementById('plotLoading').style.display = 'block';
+            document.getElementById('plotResults').innerHTML = '';
+            document.getElementById('plotNotFound').style.display = 'none';
+            
+            setTimeout(() => {
+                document.getElementById('plotLoading').style.display = 'none';
+                
+                // 如果只有选中文件被分析，过滤语料库
+                let filteredCorpus = corpus;
+                let filteredFileNames = fileNames;
+                if (selectedFilesOnly) {
+                    const selectedIndices = [];
+                    document.querySelectorAll('#fileList .file-item.active').forEach(item => {
+                        selectedIndices.push(parseInt(item.getAttribute('data-index')));
+                    });
+                    
+                    if (selectedIndices.length === 0) {
+                        document.getElementById('plotNotFound').style.display = 'block';
+                        return;
+                    }
+                    
+                    filteredCorpus = selectedIndices.map(i => corpus[i]);
+                    filteredFileNames = selectedIndices.map(i => fileNames[i]);
+                }
+                
+                const results = countKeywordOccurrences(keyword, filteredCorpus);
+                
+                if (results.length === 0) {
+                    document.getElementById('plotNotFound').style.display = 'block';
+                    return;
+                }
+                
+                // 创建图表
+                createConcordancePlot(results, filteredFileNames);
+            }, 100);
+        });
+        
+        // 统计关键词出现次数
+        function countKeywordOccurrences(keyword, filteredCorpus) {
+            const results = [];
+            
+            filteredCorpus.forEach((text, index) => {
+                const lowercaseText = text.toLowerCase();
+                let pos = 0;
+                let count = 0;
+                
+                while ((pos = lowercaseText.indexOf(keyword, pos)) !== -1) {
+                    count++;
+                    pos += keyword.length;
+                }
+                
+                results.push(count);
+            });
+            
+            return results;
+        }
+        
+        // 创建检索频率图
+        function createConcordancePlot(results, fileNames) {
+            const plotContainer = document.getElementById('plotResults');
+            plotContainer.innerHTML = '';
+            
+            // 创建图表容器
+            const plotDiv = document.createElement('div');
+            plotDiv.className = 'plot-container';
+            plotContainer.appendChild(plotDiv);
+            
+            // 找出最大值以确定图表高度
+            const maxValue = Math.max(...results);
+            
+            // 创建刻度标记
+            for (let i = 0; i <= results.length; i++) {
+                const marker = document.createElement('div');
+                marker.className = 'plot-marker';
+                marker.style.left = `${(i / (results.length)) * 100}%`;
+                marker.textContent = i === 0 ? '开始' : (i === results.length ? '结束' : fileNames[i - 1].substring(0, 10));
+                plotDiv.appendChild(marker);
+            }
+            
+            // 创建刻度线
+            for (let i = 0; i < results.length; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'plot-bar';
+                bar.style.left = `${(i / (results.length - 1)) * 100}%`;
+                bar.style.height = `${(results[i] / maxValue) * 100}%`;
+                bar.setAttribute('title', `${fileNames[i]}: ${results[i]} 次`);
+                plotDiv.appendChild(bar);
+            }
+            
+            // 添加图例
+            const legend = document.createElement('div');
+            legend.className = 'plot-legend';
+            legend.innerHTML = `
+                <div>文件数量: ${results.length}</div>
+                <div>最大出现次数: ${maxValue}</div>
+            `;
+            plotContainer.appendChild(legend);
+        }
+        
+        // 生成词频列表
+        document.getElementById('generateWordlistButton').addEventListener('click', () => {
+            if (corpus.length === 0) return;
+            
+            document.getElementById('wordlistLoading').style.display = 'block';
+            document.getElementById('wordlistResults').innerHTML = '';
+            
+            setTimeout(() => {
+                document.getElementById('wordlistLoading').style.display = 'none';
+                
+                const minFrequency = parseInt(document.getElementById('minFreq').value) || 1;
+                const sortType = document.getElementById('wordlistSortSelect').value;
+                const selectedFilesOnly = document.getElementById('wordlistSelectedFilesOnly').checked;
+                
+                let tokenizedCorpusFiltered = tokenizedCorpus;
+                if (selectedFilesOnly) {
+                    const selectedIndices = [];
+                    document.querySelectorAll('#fileList .file-item.active').forEach(item => {
+                        selectedIndices.push(parseInt(item.getAttribute('data-index')));
+                    });
+                    
+                    if (selectedIndices.length === 0) {
+                        return;
+                    }
+                    
+                    tokenizedCorpusFiltered = selectedIndices.map(i => tokenizedCorpus[i]);
+                }
+                
+                // 创建词频计数器
+                const wordFreqCounter = new Map();
+                
+                tokenizedCorpusFiltered.forEach(tokens => {
+                    tokens.forEach(word => {
+                        const lemmaWord = document.getElementById('lemmaToggle').checked 
+                            ? lemmaMap[word] || word 
+                            : word;
+                        wordFreqCounter.set(lemmaWord, (wordFreqCounter.get(lemmaWord) || 0) + 1);
+                    });
+                });
+                
+                // 转换Map为数组并排序
+                let wordList = Array.from(wordFreqCounter)
+                    .filter(([word, freq]) => freq >= minFrequency);
+                
+                if (sortType === 'freq') {
+                    wordList.sort((a, b) => b[1] - a[1]);
+                } else {
+                    wordList.sort((a, b) => a[0].localeCompare(b[0]));
+                }
+                
+                // 创建表格展示
+                const table = document.createElement('table');
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr>
+                        <th width="5%">排名</th>
+                        <th width="45%">词语</th>
+                        <th width="25%">频率</th>
+                        <th width="25%">百分比</th>
+                    </tr>
+                `;
+                table.appendChild(thead);
+                
+                const tbody = document.createElement('tbody');
+                const totalTokens = Array.from(wordFreqCounter.values()).reduce((sum, freq) => sum + freq, 0);
+                
+                wordList.slice(0, 1000).forEach((item, index) => {
+                    const [word, freq] = item;
+                    const percentage = ((freq / totalTokens) * 100).toFixed(4);
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${word}</td>
+                        <td>${freq}</td>
+                        <td>${percentage}%</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                table.appendChild(tbody);
+                document.getElementById('wordlistResults').appendChild(table);
+            }, 100);
+        });
+        
+        // 导出词频列表
+        document.getElementById('exportWordlistButton').addEventListener('click', () => {
+            if (wordFreqMap.size === 0) return;
+            
+            const minFrequency = parseInt(document.getElementById('minFreq').value) || 1;
+            const sortType = document.getElementById('wordlistSortSelect').value;
+            
+            // 转换Map为数组并排序
+            let wordList = Array.from(wordFreqMap)
+                .filter(([word, freq]) => freq >= minFrequency);
+            
+            if (sortType === 'freq') {
+                wordList.sort((a, b) => b[1] - a[1]);
+            } else {
+                wordList.sort((a, b) => a[0].localeCompare(b[0]));
+            }
+            
+            // 创建CSV内容
+            let csvContent = "词语,频率\n";
+            wordList.forEach(([word, freq]) => {
+                csvContent += `"${word}",${freq}\n`;
+            });
+            
+            // 创建并下载文件
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'wordlist.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+        
+        // 搭配词分析
+        document.getElementById('findCollocatesButton').addEventListener('click', () => {
+            const keyword = document.getElementById('collocatesInput').value.trim().toLowerCase();
+            if (!keyword || corpus.length === 0) return;
+            
+            const leftDistance = parseInt(document.getElementById('leftSpan').value) || 5;
+            const rightDistance = parseInt(document.getElementById('rightSpan').value) || 5;
+            const selectedFilesOnly = document.getElementById('collocatesSelectedFilesOnly').checked;
+            
+            document.getElementById('collocatesLoading').style.display = 'block';
+            document.getElementById('collocatesResults').innerHTML = '';
+            
+            setTimeout(() => {
+                document.getElementById('collocatesLoading').style.display = 'none';
+                
+                // 如果只有选中文件被分析，过滤语料库
+                let filteredCorpus = tokenizedCorpus;
+                if (selectedFilesOnly) {
+                    const selectedIndices = [];
+                    document.querySelectorAll('#fileList .file-item.active').forEach(item => {
+                        selectedIndices.push(parseInt(item.getAttribute('data-index')));
+                    });
+                    
+                    if (selectedIndices.length === 0) {
+                        document.getElementById('collocatesNotFound').style.display = 'block';
+                        return;
+                    }
+                    
+                    filteredCorpus = selectedIndices.map(i => tokenizedCorpus[i]);
+                }
+                
+                const collocates = findCollocations(keyword, leftDistance, rightDistance, filteredCorpus);
+                
+                if (Object.keys(collocates).length === 0) {
+                    document.getElementById('collocatesNotFound').style.display = 'block';
+                    return;
+                }
+                
+                document.getElementById('collocatesNotFound').style.display = 'none';
+                
+                // 将搭配词转为数组并排序
+                const collocatesList = Object.entries(collocates)
+                    .map(([word, data]) => ({
+                        word,
+                        freq: data.totalFreq,
+                        leftFreq: data.leftFreq,
+                        rightFreq: data.rightFreq
+                    }))
+                    .sort((a, b) => b.freq - a.freq);
+                
+                // 创建表格展示
+                const table = document.createElement('table');
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr>
+                        <th width="5%">排名</th>
+                        <th width="30%">搭配词</th>
+                        <th width="20%">总频率</th>
+                        <th width="20%">左侧频率</th>
+                        <th width="20%">右侧频率</th>
+                    </tr>
+                `;
+                table.appendChild(thead);
+                
+                const tbody = document.createElement('tbody');
+                collocatesList.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${item.word}</td>
+                        <td>${item.freq}</td>
+                        <td>${item.leftFreq}</td>
+                        <td>${item.rightFreq}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                table.appendChild(tbody);
+                document.getElementById('collocatesResults').appendChild(table);
+            }, 100);
+        });
+        
+        // 查找搭配词
+        function findCollocations(keyword, leftDistance, rightDistance, filteredCorpus) {
+            const collocates = {};
+            
+            filteredCorpus.forEach(tokens => {
+                for (let i = 0; i < tokens.length; i++) {
+                    const word = document.getElementById('lemmaToggle').checked 
+                        ? lemmaMap[tokens[i]] || tokens[i] 
+                        : tokens[i];
+                    
+                    if (word.toLowerCase() === keyword) {
+                        // 检查左侧搭配词
+                        for (let l = 1; l <= leftDistance && i - l >= 0; l++) {
+                            const leftWord = document.getElementById('lemmaToggle').checked 
+                                ? lemmaMap[tokens[i - l]] || tokens[i - l] 
+                                : tokens[i - l];
+                            
+                            if (!collocates[leftWord]) {
+                                collocates[leftWord] = { totalFreq: 0, leftFreq: 0, rightFreq: 0 };
+                            }
+                            collocates[leftWord].totalFreq++;
+                            collocates[leftWord].leftFreq++;
+                        }
+                        
+                        // 检查右侧搭配词
+                        for (let r = 1; r <= rightDistance && i + r < tokens.length; r++) {
+                            const rightWord = document.getElementById('lemmaToggle').checked 
+                                ? lemmaMap[tokens[i + r]] || tokens[i + r] 
+                                : tokens[i + r];
+                            
+                            if (!collocates[rightWord]) {
+                                collocates[rightWord] = { totalFreq: 0, leftFreq: 0, rightFreq: 0 };
+                            }
+                            collocates[rightWord].totalFreq++;
+                            collocates[rightWord].rightFreq++;
+                        }
+                    }
+                }
+            });
+            
+            // 删除关键词本身
+            delete collocates[keyword];
+            
+            return collocates;
+        }
+        
+        // 词语群组分析
+        document.getElementById('findClustersButton').addEventListener('click', () => {
+            const keyword = document.getElementById('clustersInput').value.trim().toLowerCase();
+            if (!keyword || corpus.length === 0) return;
+            
+            const minSize = parseInt(document.getElementById('clusterSizeMin').value) || 2;
+            const maxSize = parseInt(document.getElementById('clusterSizeMax').value) || 5;
+            const minFrequency = parseInt(document.getElementById('minClusterFreq').value) || 2;
+            const selectedFilesOnly = document.getElementById('clustersSelectedFilesOnly').checked;
+            
+            document.getElementById('clustersLoading').style.display = 'block';
+            document.getElementById('clustersResults').innerHTML = '';
+            
+            setTimeout(() => {
+                document.getElementById('clustersLoading').style.display = 'none';
+                
+                // 如果只有选中文件被分析，过滤语料库
+                let filteredCorpus = tokenizedCorpus;
+                if (selectedFilesOnly) {
+                    const selectedIndices = [];
+                    document.querySelectorAll('#fileList .file-item.active').forEach(item => {
+                        selectedIndices.push(parseInt(item.getAttribute('data-index')));
+                    });
+                    
+                    if (selectedIndices.length === 0) {
+                        document.getElementById('clustersNotFound').style.display = 'block';
+                        return;
+                    }
+                    
+                    filteredCorpus = selectedIndices.map(i => tokenizedCorpus[i]);
+                }
+                
+                const clusters = findNGrams(keyword, minSize, maxSize, minFrequency, filteredCorpus);
+                
+                if (clusters.length === 0) {
+                    document.getElementById('clustersNotFound').style.display = 'block';
+                    return;
+                }
+                
+                document.getElementById('clustersNotFound').style.display = 'none';
+                
+                // 创建表格展示
+                const table = document.createElement('table');
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr>
+                        <th width="5%">排名</th>
+                        <th width="65%">词语群组</th>
+                        <th width="15%">大小</th>
+                        <th width="15%">频率</th>
+                    </tr>
+                `;
+                table.appendChild(thead);
+                
+                const tbody = document.createElement('tbody');
+                clusters.forEach((cluster, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${cluster.ngram}</td>
+                        <td>${cluster.size}</td>
+                        <td>${cluster.freq}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                table.appendChild(tbody);
+                document.getElementById('clustersResults').appendChild(table);
+            }, 100);
+        });
+        
+        // 查找N元词组
+        function findNGrams(keyword, minSize, maxSize, minFrequency, filteredCorpus) {
+            const ngramFreqs = {};
+            
+            filteredCorpus.forEach(tokens => {
+                // 为每个可能的长度创建N元词组
+                for (let size = minSize; size <= maxSize; size++) {
+                    for (let i = 0; i <= tokens.length - size; i++) {
+                        const ngram = tokens.slice(i, i + size).map(t => {
+                            return document.getElementById('lemmaToggle').checked 
+                                ? lemmaMap[t] || t 
+                                : t;
+                        });
+                        
+                        // 检查N元词组是否包含关键词
+                        if (ngram.includes(keyword)) {
+                            const ngramStr = ngram.join(' ');
+                            ngramFreqs[ngramStr] = (ngramFreqs[ngramStr] || 0) + 1;
+                        }
+                    }
+                }
+            });
+            
+            // 转换为数组并排序
+            return Object.entries(ngramFreqs)
+                .filter(([_, freq]) => freq >= minFrequency)
+                .map(([ngram, freq]) => ({
+                    ngram,
+                    size: ngram.split(' ').length,
+                    freq
+                }))
+                .sort((a, b) => b.freq - a.freq);
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+</body>
+</html>
